@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import java.net.URLDecoder
 import play.api.cache._
 import javax.inject.Inject
+import org.joda.time.DateTime
 
 class Application @Inject() (cache: CacheApi) extends Controller {
 
@@ -56,11 +57,39 @@ class Application @Inject() (cache: CacheApi) extends Controller {
     }
   }
 
+  def setExpressCheckoutForRecurring = Action.async {
+    val params = Map(
+      "USER" -> USERNAME,
+      "PWD" -> PASSWORD,
+      "SIGNATURE" -> API_KEY,
+      "VERSION" -> VERSION,
+      "METHOD" -> "SetExpressCheckout",
+      "PAYMENTREQUEST_0_PAYMENTACTION" -> "SALE",
+      "PAYMENTREQUEST_0_AMT" -> "0",
+      "PAYMENTREQUEST_0_CURRENCYCODE" -> "USD",
+      "RETURNURL" -> "http://localhost:9000/success",
+      "CANCELURL" -> "http://localhost:9000/failure",
+      "LOGOIMG" -> "https://app.code-check.io/assets/images/cc_logo_b.png",
+      "BRANDNAME" -> "codecheck",
+      "REQCONFIRMSHIPPING" -> "0",
+      "NOSHIPPING" -> "1",
+      "L_BILLINGTYPE0" -> "RecurringPayments",
+      "L_BILLINGAGREEMENTDESCRIPTION0" -> "Standard plan"
+    ).map{ case (k, v) => (k, Seq(v))}
+    WS.url(ENDPOINT).post(params).map { response =>
+      val map = parse(response.body)
+      println("********** SetExpressCheckout *********")
+      printMap(map)
+      val token = map("TOKEN")
+      Redirect("https://www.sandbox.paypal.com/jp/cgi-bin/webscr?cmd=_express-checkout&token=" + token)
+    }
+  }
+
   def success = Action.async { request =>
     (for {
       token <- request.getQueryString("token")
-      payerId <- request.getQueryString("PayerID")
     } yield {
+      val payerId = request.getQueryString("PayerID").getOrElse("None")
       println("********** SetExpressCheckout - success *********")
       println("token=" + token)
       println("PayerID=" + payerId)
@@ -123,6 +152,38 @@ class Application @Inject() (cache: CacheApi) extends Controller {
     WS.url(ENDPOINT).post(params).map { response =>
       val map = parse(response.body)
       println("********** doExpressCheckoutPayment - after *********")
+      printMap(map)
+      cache.set(token, map)
+      Redirect("/submitted/" + token)
+    }
+  }
+
+  def createRecurringPaymentsProfile(token: String) = Action.async {
+    val map = cache.getOrElse[Map[String, String]](token) {
+      Map.empty
+    }
+    println("********** createRecurringPaymentsProfile - before *********")
+    printMap(map)
+
+    val params = Map(
+      "USER" -> USERNAME,
+      "PWD" -> PASSWORD,
+      "SIGNATURE" -> API_KEY,
+      "VERSION" -> VERSION,
+      "METHOD" -> "CreateRecurringPaymentsProfile",
+      "TOKEN" -> map("TOKEN"),
+      "PAYERID" -> map("PAYERID"),
+      "EMAIL" -> map("EMAIL"),
+      "PROFILESTARTDATE" -> DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ssZ"),
+      "DESC" -> "Standard plan",
+      "AUTOBILLOUTAMT" -> "AddToNextBilling",
+      "BILLINGPERIOD" -> "Month",
+      "BILLINGFREQUENCY" -> "12",
+      "AMT" -> "1000"
+    ).map{ case (k, v) => (k, Seq(v))}
+    WS.url(ENDPOINT).post(params).map { response =>
+      val map = parse(response.body)
+      println("********** createRecurringPaymentsProfile - after *********")
       printMap(map)
       cache.set(token, map)
       Redirect("/submitted/" + token)

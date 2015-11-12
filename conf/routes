@@ -5,10 +5,12 @@
 # Home page
 GET     /                                         controllers.Application.index
 GET     /setexpresscheckout                       controllers.Application.setExpressCheckout
+GET     /setexpresscheckoutforrecurring           controllers.Application.setExpressCheckoutForRecurring
 GET     /success                                  controllers.Application.success
 GET     /failure                                  controllers.Application.failure
 GET     /confirm/:token                           controllers.Application.confirm(token)
 GET     /doexpresscheckoutpayment/:token          controllers.Application.doExpressCheckoutPayment(token)
+GET     /createrecurringpaymentsprofile/:token    controllers.Application.createRecurringPaymentsProfile(token)
 GET     /submitted/:token                         controllers.Application.submitted(token)
 
 # Map static resources from the /public folder to the /assets URL path

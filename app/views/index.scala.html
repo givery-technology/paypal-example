@@ -11,9 +11,13 @@
       })
     </div>
     @if(mode == "confirm") {
-      <a href="@{"/doexpresscheckoutpayment/" + map("TOKEN")}">Submit</a>
+      <a href="@{"/doexpresscheckoutpayment/" + map("TOKEN")}">DoExpressCheckoutPayment</a>
+      <a href="@{"/createrecurringpaymentsprofile/" + map("TOKEN")}">CreateRecurringPaymentsProfile</a>
     } else {
-      <a href="/setexpresscheckout">Go</a>
+      <a href="/setexpresscheckout">Simple</a>
+      <a href="/setexpresscheckoutforrecurring">Recurring</a>
     }
+    <hr/>
+    <a href="/">Index</a>
   </div>
 }

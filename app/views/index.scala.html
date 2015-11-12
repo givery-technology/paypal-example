@@ -1,7 +1,19 @@
-@(message: String)
+@(mode: String, map: Map[String, String] = Map.empty)
 
 @main("Welcome to Play") {
-
-    @play20.welcome(message)
-
+  <div>
+    <h1>Paypal example</h1>
+    <h2>mode: @mode</h2>
+    <hr/>
+    <div>
+      @(map.map { case (k, v) =>
+        <p>{k}={v}</p>
+      })
+    </div>
+    @if(mode == "confirm") {
+      <a href="@{"/doexpresscheckoutpayment/" + map("TOKEN")}">Submit</a>
+    } else {
+      <a href="/setexpresscheckout">Go</a>
+    }
+  </div>
 }
